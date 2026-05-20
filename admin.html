@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>에이티움 HR 관리자 패널</title>
+<!-- SheetJS for Excel export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:#f1f5f9;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:20px;}
+
+/* ── Lock Screen ── */
+#lock-screen{position:fixed;inset:0;background:#0f172a;display:flex;align-items:center;justify-content:center;z-index:999;}
+#lock-box{background:#1e293b;border:1px solid #334155;border-radius:16px;padding:40px 36px;width:340px;text-align:center;}
+#lock-icon{font-size:40px;margin-bottom:14px;}
+#lock-title{font-size:18px;font-weight:700;color:#f1f5f9;margin-bottom:6px;}
+#lock-sub{font-size:12px;color:#94a3b8;margin-bottom:24px;}
+#lock-input{width:100%;padding:11px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:14px;text-align:center;letter-spacing:4px;outline:none;margin-bottom:12px;}
+#lock-input:focus{border-color:#3b82f6;}
+#lock-btn{width:100%;padding:11px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:background 0.15s;}
+#lock-btn:hover{background:#2563eb;}
+#lock-error{font-size:12px;color:#f87171;margin-top:8px;display:none;}
+
+/* ── Admin Panel ── */
+#admin{width:500px;border:1px solid #e2e8f0;border-radius:14px;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,0.08);display:flex;flex-direction:column;overflow:hidden;}
+#admin-hdr{padding:16px 20px;background:linear-gradient(135deg,#065f46,#10b981);display:flex;align-items:center;gap:12px;flex-shrink:0;}
+#admin-hdr-icon{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;}
+#admin-hdr-info{flex:1;}
+#admin-hdr-title{font-size:16px;font-weight:700;color:#fff;}
+#admin-hdr-sub{font-size:11px;color:rgba(255,255,255,0.8);margin-top:2px;}
+#admin-hdr-link{font-size:11px;background:rgba(255,255,255,0.15);color:#fff;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:background 0.15s;}
+#admin-hdr-link:hover{background:rgba(255,255,255,0.25);}
+
+#admin-body{flex:1;padding:20px;display:flex;flex-direction:column;gap:16px;}
+
+.admin-section{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;}
+.admin-section-title{font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+
+/* Status */
+#status-box{border-radius:8px;padding:10px 12px;font-size:12.5px;line-height:1.6;display:none;margin-top:10px;}
+#status-box.success{background:#f0fdf4;border:1px solid #bbf7d0;color:#14532d;}
+#status-box.error{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;}
+#status-box.info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;}
+
+/* Buttons */
+.btn-primary{width:100%;padding:10px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:background 0.15s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.btn-primary:hover{background:#2563eb;}
+.btn-green{width:100%;padding:10px;background:#059669;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:background 0.15s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.btn-green:hover{background:#047857;}
+
+/* Stats */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.stat-card{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px;text-align:center;}
+.stat-num{font-size:26px;font-weight:700;color:#1e40af;}
+.stat-label{font-size:11px;color:#64748b;margin-top:2px;}
+
+/* Category list */
+#cat-list{display:flex;flex-direction:column;gap:5px;max-height:220px;overflow-y:auto;margin-top:10px;}
+.cat-item{display:flex;justify-content:space-between;align-items:center;padding:7px 11px;background:#fff;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;}
+.cat-item-name{color:#334155;font-weight:500;}
+.cat-item-count{background:#dbeafe;color:#1e40af;border-radius:12px;padding:2px 8px;font-size:11px;font-weight:600;}
+
+/* Format guide */
+.format-table{width:100%;border-collapse:collapse;font-size:11.5px;}
+.format-table th{background:#1e40af;color:#fff;padding:6px 8px;text-align:left;}
+.format-table td{padding:5px 8px;border-bottom:1px solid #e2e8f0;color:#475569;}
+.format-table tr:last-child td{border-bottom:none;}
+.format-table tr:nth-child(even) td{background:#f8fafc;}
+.required-badge{display:inline-block;background:#fef2f2;color:#991b1b;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;}
+.optional-badge{display:inline-block;background:#f0fdf4;color:#166534;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ LOCK SCREEN ══════════════ -->
+<div id="lock-screen">
+  <div id="lock-box">
+    <div id="lock-icon">🔐</div>
+    <div id="lock-title">관리자 전용 페이지</div>
+    <div id="lock-sub">비밀번호를 입력하세요</div>
+    <input id="lock-input" type="password" placeholder="••••••" onkeydown="if(event.key==='Enter')checkPw()">
+    <button id="lock-btn" onclick="checkPw()">입장하기</button>
+    <div id="lock-error">비밀번호가 올바르지 않습니다.</div>
+  </div>
+</div>
+
+<!-- ══════════════ ADMIN PANEL ══════════════ -->
+<div id="admin">
+  <div id="admin-hdr">
+    <div id="admin-hdr-icon">⚙️</div>
+    <div id="admin-hdr-info">
+      <div id="admin-hdr-title">에이티움 HR 관리자 패널</div>
+      <div id="admin-hdr-sub">데이터 관리 · 통계 · 내보내기</div>
+    </div>
+    <a href="index.html" id="admin-hdr-link" target="_blank">💬 챗봇 열기 →</a>
+  </div>
+  <div id="admin-body">
+
+    <!-- Google Sheets Sync -->
+    <div class="admin-section">
+      <div class="admin-section-title">🔗 구글 시트 연동</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;margin-bottom:10px;">
+        <span style="font-size:18px;">✅</span>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#14532d;">구글 시트 연동됨</div>
+          <div style="font-size:11px;color:#166534;margin-top:1px;">에이티움 HR 챗봇 DB</div>
+        </div>
+      </div>
+      <div style="font-size:11.5px;color:#64748b;line-height:1.7;margin-bottom:10px;">
+        구글 시트를 수정하면 아래 <b>새로고침</b> 버튼을 눌러 데이터를 갱신하세요.<br>
+        <a href="https://docs.google.com/spreadsheets/d/1KQuKpjGLAoLV00_btBrXbv3QZ3C63DtgKAAEM52_Rjk/edit?gid=1537105553#gid=1537105553" target="_blank" style="color:#3b82f6;text-decoration:none;font-weight:600;">📄 구글 시트 열기 →</a>
+      </div>
+      <button class="btn-primary" onclick="loadFromGoogleSheets()">🔄 구글 시트에서 새로고침</button>
+      <div id="status-box"></div>
+    </div>
+
+    <!-- Stats -->
+    <div class="admin-section">
+      <div class="admin-section-title">📊 현재 데이터 현황</div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-num" id="stat-cats">-</div><div class="stat-label">대카테고리</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-subs">-</div><div class="stat-label">소카테고리</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-qs">-</div><div class="stat-label">전체 질문</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-info">-</div><div class="stat-label">담당자 정보</div></div>
+      </div>
+      <div id="cat-list"></div>
+    </div>
+
+    <!-- Export -->
+    <div class="admin-section">
+      <div class="admin-section-title">⬇️ 데이터 내보내기</div>
+      <button class="btn-green" onclick="exportToExcel()">📥 엑셀로 다운로드</button>
+    </div>
+
+    <!-- Format Guide -->
+    <div class="admin-section">
+      <div class="admin-section-title">📋 구글 시트 컬럼 안내</div>
+      <p style="font-size:11.5px;color:#64748b;margin-bottom:8px;">시트 1행은 반드시 아래 헤더 순서를 유지하세요.</p>
+      <table class="format-table">
+        <tr><th>컬럼</th><th>헤더명</th><th>필수</th></tr>
+        <tr><td>A열</td><td>대카테고리</td><td><span class="required-badge">필수</span></td></tr>
+        <tr><td>B열</td><td>소카테고리</td><td><span class="required-badge">필수</span></td></tr>
+        <tr><td>C열</td><td>질문</td><td><span class="required-badge">필수</span></td></tr>
+        <tr><td>D열</td><td>답변</td><td><span class="required-badge">필수</span></td></tr>
+        <tr><td>E열</td><td>담당자정보</td><td><span class="optional-badge">선택</span></td></tr>
+      </table>
+      <p style="font-size:11px;color:#94a3b8;margin-top:8px;">💡 대카테고리 앞에 이모지를 붙이면 챗봇 버튼에 반영됩니다. (예: ⏰ 근무시간·근태)</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  비밀번호 잠금
+// ══════════════════════════════════════════════════════
+// ⚠️ 비밀번호를 변경하려면 아래 ADMIN_PW 값을 수정하세요
+const ADMIN_PW = 'atium2025';
+
+function checkPw(){
+  const input = document.getElementById('lock-input').value;
+  if(input === ADMIN_PW){
+    document.getElementById('lock-screen').style.display = 'none';
+    loadFromGoogleSheets();
+  } else {
+    document.getElementById('lock-error').style.display = 'block';
+    document.getElementById('lock-input').value = '';
+    document.getElementById('lock-input').focus();
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  GOOGLE SHEETS 연동 설정
+// ══════════════════════════════════════════════════════
+const SHEET_API_KEY = 'AIzaSyBxVKofJ9iGFFOZZVNZ3HfhlJbYij9s-NA';
+const SHEET_ID      = '1KQuKpjGLAoLV00_btBrXbv3QZ3C63DtgKAAEM52_Rjk';
+const SHEET_NAME    = 'HR Chatbot DB';
+
+let DATA = { cats: [] };
+
+function setStatus(msg, type){
+  const box = document.getElementById('status-box');
+  box.textContent = msg;
+  box.className = type;
+  box.style.display = 'block';
+}
+
+async function loadFromGoogleSheets(){
+  setStatus('⏳ 구글 시트에서 데이터를 불러오는 중...', 'info');
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(SHEET_NAME)}?key=${SHEET_API_KEY}`;
+  try {
+    const res = await fetch(url);
+    if(!res.ok){
+      const errJson = await res.json().catch(()=>({}));
+      throw new Error(`API 오류 ${res.status}: ${errJson.error?.message || res.statusText}`);
+    }
+    const json = await res.json();
+    const rows = json.values || [];
+    if(rows.length < 2){ setStatus('❌ 시트에 데이터가 없습니다.', 'error'); return; }
+
+    const headers = rows[0];
+    const colIdx = {
+      cat:  headers.indexOf('대카테고리'),
+      sub:  headers.indexOf('소카테고리'),
+      q:    headers.indexOf('질문'),
+      a:    headers.indexOf('답변'),
+      info: headers.indexOf('담당자정보'),
+    };
+    const missing = Object.entries(colIdx).filter(([k,v])=>k!=='info'&&v===-1).map(([k])=>k);
+    if(missing.length){ setStatus(`❌ 필수 컬럼 누락: ${missing.join(', ')}`, 'error'); return; }
+
+    const catsMap = new Map();
+    rows.slice(1).forEach(row => {
+      const catRaw   = (row[colIdx.cat]||'').trim();
+      const subLabel = (row[colIdx.sub]||'').trim();
+      const q        = (row[colIdx.q]||'').trim();
+      const a        = (row[colIdx.a]||'').trim();
+      const info     = colIdx.info >= 0 ? (row[colIdx.info]||'').trim() : '';
+      if(!catRaw||!subLabel||!q||!a) return;
+
+      const iconMatch = catRaw.match(/^(\p{Emoji}[\ufe0f\u20e3]?)\s*(.+)$/u);
+      const catIcon   = iconMatch ? iconMatch[1] : '';
+      const catLabel  = iconMatch ? iconMatch[2].trim() : catRaw;
+
+      if(!catsMap.has(catLabel)){
+        catsMap.set(catLabel, { id: catLabel.replace(/[^a-zA-Z0-9가-힣]/g,'_'), icon:catIcon, label:catLabel, subsMap:new Map() });
+      }
+      const cat = catsMap.get(catLabel);
+      if(catIcon) cat.icon = catIcon;
+      if(!cat.subsMap.has(subLabel)) cat.subsMap.set(subLabel, {label:subLabel, qs:[]});
+      const qObj = {q, a};
+      if(info) qObj.info = info;
+      cat.subsMap.get(subLabel).qs.push(qObj);
+    });
+
+    const newData = {cats:[]};
+    catsMap.forEach(cat => {
+      const subs = []; cat.subsMap.forEach(sub => subs.push(sub));
+      newData.cats.push({id:cat.id, icon:cat.icon, label:cat.label, subs});
+    });
+    if(!newData.cats.length){ setStatus('❌ 유효한 데이터가 없습니다.', 'error'); return; }
+
+    DATA = newData;
+    const totalQs = newData.cats.reduce((s,c)=>s+c.subs.reduce((ss,sub)=>ss+sub.qs.length,0),0);
+    setStatus(`✅ 로드 완료 — ${rows.length-1}행 반영 (${new Date().toLocaleTimeString()})`, 'success');
+    updateStats();
+  } catch(err){
+    console.error(err);
+    setStatus('❌ 불러오기 실패: ' + err.message, 'error');
+  }
+}
+
+function updateStats(){
+  const cats = DATA.cats;
+  const totalSubs = cats.reduce((s,c)=>s+c.subs.length,0);
+  const totalQs   = cats.reduce((s,c)=>s+c.subs.reduce((ss,sub)=>ss+sub.qs.length,0),0);
+  const totalInfo = cats.reduce((s,c)=>s+c.subs.reduce((ss,sub)=>ss+sub.qs.filter(q=>q.info).length,0),0);
+
+  document.getElementById('stat-cats').textContent = cats.length;
+  document.getElementById('stat-subs').textContent = totalSubs;
+  document.getElementById('stat-qs').textContent   = totalQs;
+  document.getElementById('stat-info').textContent = totalInfo;
+
+  document.getElementById('cat-list').innerHTML = cats.map(c=>{
+    const qCount = c.subs.reduce((s,sub)=>s+sub.qs.length,0);
+    return `<div class="cat-item">
+      <span class="cat-item-name">${c.icon||''} ${c.label}</span>
+      <span class="cat-item-count">${qCount}개</span>
+    </div>`;
+  }).join('');
+}
+
+function exportToExcel(){
+  const rows = [['대카테고리','소카테고리','질문','답변','담당자정보']];
+  DATA.cats.forEach(cat=>{
+    const catLabel = (cat.icon ? cat.icon+' ' : '') + cat.label;
+    cat.subs.forEach(sub=>{
+      sub.qs.forEach(q=>{
+        rows.push([catLabel, sub.label, q.q, q.a, q.info||'']);
+      });
+    });
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:20},{wch:26},{wch:42},{wch:60},{wch:30}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'HR챗봇 데이터');
+  XLSX.writeFile(wb, 'HR챗봇_데이터_에이티움.xlsx');
+}
+</script>
+</body>
+</html>
