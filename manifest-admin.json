@@ -3,12 +3,13 @@
   "short_name": "HR 관리자",
   "description": "에이티움 HR 챗봇 관리자 전용 패널",
   "start_url": "/atium-hr-chatbot/admin.html",
-  "scope": "/atium-hr-chatbot/",
+  "scope": "/atium-hr-chatbot/admin.html",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#1e55c3",
   "theme_color": "#1e55c3",
   "lang": "ko",
+  "id": "atium-hr-admin",
   "icons": [
     {
       "src": "icon-admin-192.png",
