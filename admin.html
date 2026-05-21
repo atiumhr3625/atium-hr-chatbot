@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>에이티움 HR 관리자 패널</title>
+<link rel="manifest" href="manifest-admin.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="HR 관리자">
+<meta name="theme-color" content="#1e55c3">
+<link rel="apple-touch-icon" href="icon-admin-192.png">
 <!-- SheetJS for Excel export -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -273,7 +279,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 // ══════════════════════════════════════════════════════
 //  비밀번호 잠금
 // ══════════════════════════════════════════════════════
-// ⚠️ 비밀번호를 변경하려면 아래 ADMIN_PW 값을 수정하세요
 const ADMIN_PW = 'atium2025';
 
 function checkPw(){
@@ -360,7 +365,6 @@ async function loadFromGoogleSheets(){
     if(!newData.cats.length){ setStatus('❌ 유효한 데이터가 없습니다.', 'error'); return; }
 
     DATA = newData;
-    const totalQs = newData.cats.reduce((s,c)=>s+c.subs.reduce((ss,sub)=>ss+sub.qs.length,0),0);
     setStatus(`✅ 로드 완료 — ${rows.length-1}행 반영 (${new Date().toLocaleTimeString()})`, 'success');
     updateStats();
   } catch(err){
@@ -415,7 +419,6 @@ function switchTab(tab, btn) {
   document.getElementById('tab-' + tab).classList.add('active');
   btn.classList.add('active');
   if (tab === 'traffic') {
-    // URL 입력값 복원
     const saved = localStorage.getItem('trackerUrl') || '';
     document.getElementById('tracker-url-input').value = saved;
     if (saved) loadTrafficStats();
@@ -495,7 +498,7 @@ function renderDailyChart(data) {
   const max = Math.max(...data.items.map(d=>d.count), 1);
   el.innerHTML = data.items.map(d => {
     const pct = Math.round(d.count / max * 100);
-    const label = d.date.slice(5); // MM-DD
+    const label = d.date.slice(5);
     return `<div class="trend-col">
       <div class="trend-cnt">${d.count||''}</div>
       <div class="trend-bar-wrap"><div class="trend-bar" style="height:${pct}%"></div></div>
@@ -521,7 +524,6 @@ function renderCategoryChart(data) {
 function renderHourlyChart(data) {
   const el = document.getElementById('hourly-chart');
   if (!data || !data.items) { el.innerHTML = '<div class="no-data">데이터 없음</div>'; return; }
-  // 업무시간(7~22시)만 표시
   const work = data.items.filter(h => h.hour >= 7 && h.hour <= 22);
   const max  = Math.max(...work.map(h=>h.count), 1);
   el.innerHTML = work.map(h => `
