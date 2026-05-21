@@ -8,22 +8,28 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="HR 도우미">
-<meta name="theme-color" content="#1e55c3">
+<meta name="theme-color" content="#1e40af">
 <link rel="apple-touch-icon" href="icon-chat-192.png">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:#f1f5f9;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px;}
-
-/* ── Chatbot ── */
 #wrap{display:flex;flex-direction:column;height:720px;width:700px;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,0.08);}
 #hdr{padding:14px 18px;border-bottom:1px solid #e2e8f0;background:linear-gradient(135deg,#1e40af,#3b82f6);display:flex;align-items:center;gap:12px;flex-shrink:0;}
-
-/* ── SVG 아이콘 ── */
 #hdr-icon{width:44px;height:44px;flex-shrink:0;filter:drop-shadow(0 2px 6px rgba(29,78,216,0.35));}
-
 #hdr-info{flex:1;}
 #hdr-title{font-size:16px;font-weight:700;color:#fff;}
 #hdr-sub{font-size:11.5px;color:rgba(255,255,255,0.8);margin-top:2px;}
+
+/* 설치 버튼 */
+#install-btn{display:none;align-items:center;gap:6px;padding:7px 13px;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.45);border-radius:20px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background 0.15s;flex-shrink:0;}
+#install-btn:hover{background:rgba(255,255,255,0.32);}
+#install-btn.show{display:flex;}
+
+/* iOS 설치 안내 배너 */
+#ios-banner{display:none;position:fixed;bottom:0;left:0;right:0;background:#1e40af;color:#fff;padding:14px 20px;font-size:13px;line-height:1.6;z-index:999;text-align:center;}
+#ios-banner b{display:block;font-size:14px;margin-bottom:4px;}
+#ios-close{margin-top:8px;display:inline-block;padding:5px 18px;border:1px solid rgba(255,255,255,0.5);border-radius:12px;cursor:pointer;font-size:12px;}
+
 #msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
 .msg-bot{display:flex;gap:9px;align-items:flex-start;}
 .bot-av{width:32px;height:32px;border-radius:50%;flex-shrink:0;margin-top:2px;overflow:hidden;}
@@ -49,10 +55,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 </head>
 <body>
 
-<!-- ══════════════ CHATBOT ══════════════ -->
 <div id="wrap">
   <div id="hdr">
-    <!-- SVG 아이콘 인라인 -->
     <svg id="hdr-icon" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <radialGradient id="iconBg" cx="38%" cy="32%" r="68%">
@@ -109,11 +113,55 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
       <div id="hdr-title">에이티움 HR 도우미</div>
       <div id="hdr-sub">임직원 문의 응대 시스템 · 에이티움 전용</div>
     </div>
+    <!-- 설치 버튼 (Android/Chrome 자동 표시) -->
+    <button id="install-btn" onclick="installApp()">⬇ 앱 설치</button>
   </div>
   <div id="msgs"></div>
 </div>
 
+<!-- iOS 설치 안내 배너 -->
+<div id="ios-banner">
+  <b>📲 홈 화면에 추가하는 방법</b>
+  Safari 하단 공유 버튼(□↑) 누르고 → "홈 화면에 추가" 선택
+  <div id="ios-close" onclick="document.getElementById('ios-banner').style.display='none'">닫기</div>
+</div>
+
 <script>
+// ══════════════════════════════════════════════════════
+//  PWA 설치
+// ══════════════════════════════════════════════════════
+let deferredPrompt = null;
+
+// Android/Chrome: 설치 프롬프트 대기
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-btn').classList.add('show');
+});
+
+// 설치 완료 시 버튼 숨기기
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-btn').classList.remove('show');
+  deferredPrompt = null;
+});
+
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => {
+      deferredPrompt = null;
+      document.getElementById('install-btn').classList.remove('show');
+    });
+  }
+}
+
+// iOS Safari 감지 → 배너 표시
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isInStandaloneMode = window.navigator.standalone === true;
+if (isIOS && !isInStandaloneMode) {
+  document.getElementById('ios-banner').style.display = 'block';
+}
+
 // ══════════════════════════════════════════════════════
 //  GOOGLE SHEETS 연동 설정
 // ══════════════════════════════════════════════════════
@@ -121,21 +169,17 @@ const SHEET_API_KEY = 'AIzaSyBxVKofJ9iGFFOZZVNZ3HfhlJbYij9s-NA';
 const SHEET_ID      = '1KQuKpjGLAoLV00_btBrXbv3QZ3C63DtgKAAEM52_Rjk';
 const SHEET_NAME    = 'HR Chatbot DB';
 
-// ══════════════════════════════════════════════════════
-//  클릭 트래픽 수집 — Apps Script 웹훅 URL
-// ══════════════════════════════════════════════════════
 const TRACKER_URL = 'https://script.google.com/macros/s/AKfycbykKdkmsWyRwLBoPTwjzZH434SEIi_j2eChqZKBIF96sIBWxE6Ym0nT7S3z0t7corVR/exec';
 
 function trackEvent(eventType, category='', subCategory='', question='') {
   if (!TRACKER_URL || TRACKER_URL.startsWith('YOUR_')) return;
   try {
     fetch(TRACKER_URL, {
-      method: 'POST',
-      mode: 'no-cors',
+      method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ eventType, category, subCategory, question })
     });
-  } catch(e) { /* 트래킹 실패는 무시 */ }
+  } catch(e) {}
 }
 
 async function loadFromGoogleSheets(){
@@ -214,36 +258,35 @@ let DATA = { cats: [] };
 
 function $m(){ return document.getElementById('msgs'); }
 
-// 봇 아바타에도 동일한 SVG 아이콘 사용
 const BOT_AVATAR_SVG = `<svg viewBox="0 0 512 512" style="width:32px;height:32px;border-radius:50%;" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <radialGradient id="av_iconBg" cx="38%" cy="32%" r="68%">
+    <radialGradient id="av_bg" cx="38%" cy="32%" r="68%">
       <stop offset="0%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#1d4ed8"/>
     </radialGradient>
-    <radialGradient id="av_bubbleGrad" cx="35%" cy="28%" r="65%">
+    <radialGradient id="av_bbl" cx="35%" cy="28%" r="65%">
       <stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#eff6ff"/>
     </radialGradient>
-    <radialGradient id="av_blushL" cx="50%" cy="50%" r="50%">
+    <radialGradient id="av_bl" cx="50%" cy="50%" r="50%">
       <stop offset="0%" stop-color="#fda4af" stop-opacity="0.85"/><stop offset="100%" stop-color="#fb7185" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="av_blushR" cx="50%" cy="50%" r="50%">
+    <radialGradient id="av_br" cx="50%" cy="50%" r="50%">
       <stop offset="0%" stop-color="#fda4af" stop-opacity="0.85"/><stop offset="100%" stop-color="#fb7185" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="av_shineGrad" cx="28%" cy="18%" r="68%">
+    <radialGradient id="av_sh" cx="28%" cy="18%" r="68%">
       <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <rect x="12" y="12" width="488" height="488" rx="116" fill="url(#av_iconBg)"/>
-  <ellipse cx="155" cy="112" rx="148" ry="88" fill="url(#av_shineGrad)"/>
-  <rect x="64" y="110" width="368" height="246" rx="62" fill="url(#av_bubbleGrad)"/>
-  <path d="M136 356 Q110 408 78 430 Q144 412 174 368" fill="url(#av_bubbleGrad)"/>
+  <rect x="12" y="12" width="488" height="488" rx="116" fill="url(#av_bg)"/>
+  <ellipse cx="155" cy="112" rx="148" ry="88" fill="url(#av_sh)"/>
+  <rect x="64" y="110" width="368" height="246" rx="62" fill="url(#av_bbl)"/>
+  <path d="M136 356 Q110 408 78 430 Q144 412 174 368" fill="url(#av_bbl)"/>
   <ellipse cx="176" cy="218" rx="23" ry="26" fill="#1d4ed8" opacity="0.88"/>
   <ellipse cx="184" cy="208" rx="8" ry="8" fill="white" opacity="0.75"/>
   <ellipse cx="314" cy="218" rx="23" ry="26" fill="#1d4ed8" opacity="0.88"/>
   <ellipse cx="322" cy="208" rx="8" ry="8" fill="white" opacity="0.75"/>
   <path d="M192 272 Q245 316 298 272" stroke="#2563eb" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.75"/>
-  <ellipse cx="136" cy="268" rx="36" ry="22" fill="url(#av_blushL)"/>
-  <ellipse cx="352" cy="268" rx="36" ry="22" fill="url(#av_blushR)"/>
+  <ellipse cx="136" cy="268" rx="36" ry="22" fill="url(#av_bl)"/>
+  <ellipse cx="352" cy="268" rx="36" ry="22" fill="url(#av_br)"/>
 </svg>`;
 
 function addBot(html){
