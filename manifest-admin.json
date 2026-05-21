@@ -1,0 +1,26 @@
+{
+  "name": "ATIUM HR 관리자 패널",
+  "short_name": "HR 관리자",
+  "description": "에이티움 HR 챗봇 관리자 전용 패널",
+  "start_url": "/atium-hr-chatbot/admin.html",
+  "scope": "/atium-hr-chatbot/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1e55c3",
+  "theme_color": "#1e55c3",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "icon-admin-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-admin-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
