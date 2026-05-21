@@ -60,6 +60,23 @@ const SHEET_API_KEY = 'AIzaSyBxVKofJ9iGFFOZZVNZ3HfhlJbYij9s-NA';
 const SHEET_ID      = '1KQuKpjGLAoLV00_btBrXbv3QZ3C63DtgKAAEM52_Rjk';
 const SHEET_NAME    = 'HR Chatbot DB';
 
+// ══════════════════════════════════════════════════════
+//  클릭 트래픽 수집 — Apps Script 웹훅 URL
+// ══════════════════════════════════════════════════════
+const TRACKER_URL = 'https://script.google.com/macros/s/AKfycbykKdkmsWyRwLBoPTwjzZH434SEIi_j2eChqZKBIF96sIBWxE6Ym0nT7S3z0t7corVR/exec';
+
+function trackEvent(eventType, category='', subCategory='', question='') {
+  if (!TRACKER_URL || TRACKER_URL.startsWith('YOUR_')) return;
+  try {
+    fetch(TRACKER_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ eventType, category, subCategory, question })
+    });
+  } catch(e) { /* 트래킹 실패는 무시 */ }
+}
+
 async function loadFromGoogleSheets(){
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(SHEET_NAME)}?key=${SHEET_API_KEY}`;
   try {
@@ -171,6 +188,7 @@ function showCats(){
 function selectCat(i){
   curCatIdx=i; state='subs';
   const cat = DATA.cats[i];
+  trackEvent('cat_click', cat.label);
   addUser(`${cat.icon||''} ${cat.label}`);
   addBot(`<b>${cat.label}</b> 관련 항목을 선택해 주세요.`);
   let html = `<button class="back-btn" onclick="showCats()">← 카테고리로</button>`;
@@ -186,6 +204,7 @@ function selectSub(j){
   curSubIdx=j; state='qs';
   const cat = DATA.cats[curCatIdx];
   const sub = cat.subs[j];
+  trackEvent('sub_click', cat.label, sub.label);
   addUser(sub.label);
   addBot(`<b>${sub.label}</b> 관련 자주 묻는 질문입니다.`);
   let html = `<div class="nav-btns"><button class="back-btn" onclick="selectCat(${curCatIdx})">← 소카테고리로</button><button class="back-btn" onclick="showCats()">🏠 카테고리로</button></div>`;
@@ -199,7 +218,10 @@ function selectSub(j){
 
 function selectQ(k){
   state='ans';
-  const q = DATA.cats[curCatIdx].subs[curSubIdx].qs[k];
+  const cat = DATA.cats[curCatIdx];
+  const sub = cat.subs[curSubIdx];
+  const q   = sub.qs[k];
+  trackEvent('q_click', cat.label, sub.label, q.q);
   addUser(q.q);
   let aHtml = `<div class="answer-box">${q.a.replace(/\n/g,'<br>')}</div>`;
   if(q.info) aHtml += `<div class="info-box">ℹ️ ${q.info.replace(/\n/g,'<br>')}</div>`;
