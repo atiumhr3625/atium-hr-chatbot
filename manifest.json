@@ -1,15 +1,12 @@
 {
-  "name": "ATIUM HR 챗봇 도우미",
+  "name": "에이티움 HR 도우미",
   "short_name": "HR 도우미",
-  "description": "에이티움 임직원 HR 문의 AI 도우미",
-  "start_url": "/atium-hr-chatbot/?pwa=chat",
-  "scope": "/atium-hr-chatbot/",
+  "description": "에이티움 임직원 HR 문의 응대 챗봇",
+  "start_url": "./index.html",
   "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#1e40af",
   "orientation": "portrait",
-  "background_color": "#1e55c3",
-  "theme_color": "#1e55c3",
-  "lang": "ko",
-  "id": "atium-hr-chat",
   "icons": [
     {
       "src": "icon-chat-192.png",
